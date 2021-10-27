@@ -1,0 +1,96 @@
+version: '3.4'
+
+services:
+
+  sqldb:
+    container_name: sqldb
+    ports:
+      - "5598:1433"
+    environment:
+      SA_PASSWORD: "P@ssw0rd"
+      ACCEPT_EULA: "Y"
+  rabbitmq:
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  order.api:
+    container_name: orderapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:orderconnection=Server=sqldb;Database=orderDb;User Id=sa;Password='P@ssw0rd';MultipleActiveResultSets=true"
+      - "EventBus:HostName=rabbitmq"
+    ports:
+      - "8001:80"
+    depends_on:
+      - sqldb
+      - rabbitmq
+    volumes:
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+
+
+  basket.api:
+    container_name: basketapi
+    
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:basketConection=Server=sqldb;Database=basketDb;User Id=sa;Password='P@ssw0rd';MultipleActiveResultSets=true"
+      - "EventBus:HostName=rabbitmq"
+
+    depends_on:
+      - sqldb
+      - rabbitmq
+    ports:
+      - "8002:80"
+    volumes:
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+
+  oceletapigetway:
+    container_name: ocelotapigateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+    depends_on:
+      - order.api
+      - basket.api
+      - catalog.api
+    volumes:
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    ports:
+      - "7000:80"
+
+
+  catalog.api:
+    container_name: catalogapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:CatalogConection=Server=sqldb;Database=catalogDb;User Id=sa;Password='P@ssw0rd';MultipleActiveResultSets=true"
+      - "EventBus:HostName=rabbitmq"
+
+    ports:
+      - "8000:80"
+    volumes:
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+
+
+
+  aspnetrunbasics:
+    container_name: aspnetrunbasic
+
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ApiSettings:BaseAddress=ocelotapigateway"
+      
+    depends_on:
+      - order.api
+      - basket.api
+      - catalog.api
+      - oceletapigetway
+    ports:
+      - "8003:80"
+    
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro

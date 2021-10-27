@@ -1,0 +1,41 @@
+version: '3.4'
+
+services:
+  sqldb:
+    image: mcr.microsoft.com/mssql/server
+
+  rabbitmq:
+    image: rabbitmq:3-management
+
+  basket.api:
+    image: ${DOCKER_REGISTRY-}basketapi
+    build:
+      context: .
+      dockerfile: src/Basket/Basket.API/Dockerfile
+
+  order.api:
+    image: ${DOCKER_REGISTRY-}orderapi
+    build:
+      context: .
+      dockerfile: order/Dockerfile
+
+  oceletapigetway:
+    image: ${DOCKER_REGISTRY-}oceletapigetway
+    build:
+      context: .
+      dockerfile: src/ApiGetway/OceletAPIGetway/OceletAPIGetway/Dockerfile
+
+
+  catalog.api:
+    image: ${DOCKER_REGISTRY-}catalogapi
+    build:
+      context: .
+      dockerfile: src/Catalog/Catalog.Api/Dockerfile
+
+
+  aspnetrunbasics:
+    image: ${DOCKER_REGISTRY-}aspnetrunbasics
+    build:
+      context: .
+      dockerfile: src/WebApp/AspnetRunBasics/Dockerfile
+
